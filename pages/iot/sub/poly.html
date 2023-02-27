@@ -28,12 +28,77 @@
 			<div id="main">
 				    <div class="box container">
 					<header>
-						<h2>Time series NDVI animation with GEE</h2>
+						<h2>low-cost recording-type microcontroller-based temperature, humidity, and light intensity sensor</h2>
 					</header>
 					<section>
-						<p style="text-align: justify;">In this article, we will discuss how to generate a time-series 
-                            animation of Punjab, India using the Normalized Difference Vegetation Index (NDVI) band of 
-                            the MODIS product in Google Earth Engine (GEE).</p>
+						<p style="text-align: justify;">Monitoring the climate parameters and light intensity inside 
+							the greenhouse is as important as observing these parameters outside the greenhouse to 
+							maintain proper plant growth and good-quality agricultural products. Generally, these 
+							parameters inside the greenhouse depend upon the greenhouse shape, the material used, its 
+							size, and ventilation type along with the location and climate conditions. Advanced 
+							technologies to monitor these parameters have already been implemented in the greenhouse 
+							to ensure good plant yield. However, these instruments are quite expensive and not 
+							affordable by small poly house owners. Advancements in information and communication 
+							technologies and micro-mechanized sensors allowed the development of low-cost hardware for 
+							automation and monitoring in agriculture. Low-cost sensors along with open-source platforms 
+							for programming purposes have facilitated the monitoring and control of environmental and 
+							crop-related variables in protected environment agriculture. Therefore, we have developed 
+							and implemented a microcontroller-based sensor to measure inside and outside climate 
+							parameters and light intensity for a naturally ventilated tunnel-type greenhouse.</p>
+						<div class="image fit center"><figure><img src="../as/dia.png" alt="" />
+							<figcaption>Circuit diagram of composite sensor</figcaption></figure></div>
+							<p><b>Arduino uno R3</b></p>
+						<p style="text-align: justify;">A microcontroller can be defined as a single-chip special-purpose
+							 computer dedicated to performing one specific task in a loop. It consists of memory (RAM, 
+							 ROM, and flash), input and output pins, and a processor core like a multitasking processor 
+							 in a computer. However, this microcontroller core is not as fast as in general 
+							 purpose-computer. In this project, we used the ATmega8535-based microcontroller 
+							 manufactured by Arduino which is an 8-bit AVR CPU, 8KB flash, 512 Byte EEPROM with 
+							 512 Bytes internal SRAM.</p>
+						<p><b>Selection of sensor</b></p>
+						<p><b>Temperature and humidity sensor</b></p>
+						<p style="text-align: justify;">Integrated temperature and relative humidity (RH) sensors DHT11 
+							and DHT22 were selected for this research work and tested at various field conditions for 
+							calibration and validation purposes. Both these sensors DHT11 and DHT22 have three pins for
+							 voltage input, a ground pin, and a digital data pin. The temperature and RH range of DHT11 
+							 is 0 to 50C and 20 to 80%, respectively while for DHT22 range varies from -40 to 125C and 0 
+							 to 100%, respectively. The data sampling rate of DHT11 can be as low as one-second while in 
+							 the case of DHT22 sampling rate is of two seconds.</p>
+						<p><b>Light sensor</b></p>	
+						<p style="text-align: justify;">To monitor the light intensity inside and outside of the 
+							greenhouse two light sensors, Adafruit BH1750 and TSL2591 were selected for evaluation 
+							purposes. These sensors were tested at various light intensities and compared with ideal 
+							available commercial light sensors for performance evaluation. Both sensors work on the I2C 
+							interface and can measure light in terms of lux. The range of the former is 0 to 65,000 lx 
+							while the latter can measure light from 0 to 88,000 lx.</p>
+						<p><b>Real-time clock and SD card holder</b></p>
+						<p style="text-align: justify;">The integrated data logger shield from Adafruit consists of an 
+							inbuilt DS1307 real-time clock (RTC) and SD card slot work on FAT16 or FAT32 to store 
+							monitored data used during the experiment. This shield comes with a button-type battery to 
+							power RTC in case the shield power is cut-off so that time recording will continue. This 
+							shield communicates with Arduino either through an inter-integrated circuit (I2C) or serial 
+							peripheral interface (SPI).</p>
+						<p><b>Liquid crystal display (LCD)</b></p>	
+						<p style="text-align: justify;">A 16x2 LCD display with an I2C interface was employed to display
+							 real-time values of various parameters after a specific time interval along with storing 
+							 data inside the memory card.</p>
+						<p><b>Working</b></p>
+						<p style="text-align: justify;">The programming of the microcontroller was accomplished on 
+							Arduino integrated development environment (IDE). In this program, instead of the delay 
+							function to control time interval, the millis function is adopted which has a number of 
+							advantages over the former function. With the help of the latter, virtually we are running 
+							two programs simultaneously as different time intervals were selected for displaying 
+							parameters on display and storing them in the SD card. As shown in the flow chart, after 
+							a particular time, digital signals are sent from the temperature and humidity sensor, and 
+							12C communication from the light sensor to send light luminosity along with a time stamp 
+							from RTC, and the data is display on LCD or stored in memory card based on time interval. 
+							TCA9548A, which is an I2C multiplexer that allows you to connect multiple I2C devices to a 
+							single I2C bus, is used to connect multiple light sensors (TSL2591) as they both have the 
+							same I2C address. It acts as a switch and allows one sensor to use the I2C bus at a 
+							particular time so as to receive unambiguous data.</p>
+						<a href="../as/polycode.html" target="blank">Click to view code</a>
+						<div class="image fit center"><figure><img src="../as/flow.png" alt="" />
+							<figcaption>Flow diagram of sensor working</figcaption></figure></div>
                     </section>
                     </div>
 
@@ -69,6 +134,7 @@
 			<script src="../../../assets/js/util.js"></script>
 			<script src="../../../assets/js/main.js"></script>
             <script src="../../../assets/js/codestyler.js"></script>
+			<script src="../../../assets/js/clickformore.js"></script>
 
 	</body>
 </html>

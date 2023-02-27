@@ -1,0 +1,323 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <title>Digital Agriculture</title>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="../../../assets/css/codestyler.css">
+    <title>Document</title>
+</head>
+<body>
+    <div class="code">
+        <pre><span id='coden1'>
+Details
+// log Temperature/Humidity/Lumisity readings to SD card
+// Description of sensor systen: We use DHT22 temperature sensor to measure temperature and humidity and adafruit TSL 2591 
+// for lux measurement. As this system includes two DHT22 and two TSL 2591 sensors to measure inside and outside parameters
+// (as mentioned above) so we use TCA9548A along with as TSL2591 address is not chanagable and ardunio uno has only one I2C
+// bus. To save observed paramameters after particular time, Adafruit dataloggers is used in this system.
+
+
+#include "DHT.h"
+#include &ltSD.h&gt
+#include &ltAdafruit_Sensor.h&gt
+#include "Adafruit_TSL2591.h"
+#include &ltSPI.h&gt
+#include &ltLiquidCrystal_I2C.h&gt
+#include &ltWire.h&gt
+#include "RTClib.h"
+
+RTC_DS1307 RTC;
+
+#define TCAADDR 0x70
+
+Adafruit_TSL2591 tsl1 = Adafruit_TSL2591(1);
+Adafruit_TSL2591 tsl2 = Adafruit_TSL2591(2);
+
+void configureSensor1(void)
+{
+    tsl1.setGain(TSL2591_GAIN_LOW);    // 1x gain (bright light)
+    tsl1.setTiming(TSL2591_INTEGRATIONTIME_400MS);
+    
+}
+
+void configureSensor2(void)
+{
+    tsl2.setGain(TSL2591_GAIN_LOW);    // 1x gain (bright light)
+    tsl2.setTiming(TSL2591_INTEGRATIONTIME_400MS);
+    
+}
+
+void tcaselect(uint8_t i) {
+    if (i > 7) return;
+    
+    Wire.beginTransmission(TCAADDR);
+    Wire.write(1 << i);
+    Wire.endTransmission();  
+}
+
+LiquidCrystal_I2C lcd(0x27,16,2); 
+
+#define LOG_INTERVAL  30000 
+#define lcd_INTERVAL 20000  
+#define ECHO_TO_SERIAL   1 
+
+#define DHTPIN1 3     
+#define DHTPIN2 4
+
+#define DHTTYPE DHT22   // DHT 22  (AM2302)
+
+DHT dht1(DHTPIN1, DHTTYPE);
+DHT dht2(DHTPIN2, DHTTYPE);
+
+const int chipSelect = 10;
+
+File logfile;
+
+void setup() {
+    Serial.begin(9600); 
+    lcd.begin(16, 2);
+    lcd.init();                      
+    lcd.backlight();
+
+    lcd.setCursor(0,0);
+    
+    Serial.print("Initializing SD card...");
+
+    pinMode(10, OUTPUT);
+    
+    if (!SD.begin(chipSelect)) {
+    Serial.println("Card failed, or not present");
+    lcd.setCursor(0,0);
+    lcd.print("CARD FAILED");
+    return;
+    }
+    Serial.println("card initialized.");
+    lcd.setCursor(0,0);
+    lcd.print("CARD OK...");
+    lcd.setCursor(0,1);
+    lcd.print("DEPTT. OF SWE");
+
+    char filename[] = "SWE00.CSV";
+    for (uint8_t i = 0; i < 100; i++) {
+    filename[3] = i/10 + '0';
+    filename[4] = i%10 + '0';
+    if (! SD.exists(filename)) {
+        logfile = SD.open(filename, FILE_WRITE); 
+    }
+    }
+    
+    if (! logfile) {
+    Serial.println("could not create file");
+
+    }
+    
+    Serial.print("Logging to: ");
+
+    Serial.println(filename);
+    
+    Wire.begin();  
+    if (!RTC.begin()) {
+    logfile.println("RTC failed");
+#if ECHO_TO_SERIAL
+    Serial.println("RTC failed");
+#endif
+    }
+    
+    logfile.println("millis,date,time,Lux1,Lux2,RH1,temp1,RH2,temp2");    
+#if ECHO_TO_SERIAL
+    Serial.println("millis,date,time,Lux1,Lux2,RH1,temp1,RH2,temp2");
+#endif //ECHO_TO_SERIAL
+    dht1.begin();
+    dht2.begin();
+
+        tcaselect(2);
+    if (tsl1.begin()) 
+    {
+    Serial.println(F("Found a TSL2591 sensor1"));
+    } 
+    else 
+    {
+    Serial.println(F("No sensor found ... check your wiring1?"));
+    while (1);
+    }
+
+    tcaselect(6);
+    if (tsl2.begin()) 
+    {
+    Serial.println(F("Found a TSL2591 sensor"));
+    } 
+    else 
+    {
+    Serial.println(F("No sensor found ... check your wiring2?"));
+    while (1);
+    }
+    tcaselect(2);
+    configureSensor1();
+
+    tcaselect(6);
+    configureSensor2();
+}
+
+void loop() {
+    DateTime now;
+    String dataString = "";
+    now = RTC.now();
+    logfile.print(now.unixtime()); // seconds since 1/1/1970
+    logfile.print(",");
+    if (now.month() < 10) {
+    logfile.print(0, DEC);
+    }
+    logfile.print(now.month(), DEC);
+    logfile.print("/");
+    if (now.day() < 10) {
+    logfile.print(0, DEC);
+    }
+    logfile.print(now.day(), DEC);
+    logfile.print("/");
+    logfile.print(now.year(), DEC);
+    logfile.print(",");
+    if (now.hour() < 10) {
+    logfile.print(0, DEC);
+    }
+    logfile.print(now.hour(), DEC);
+    logfile.print(":");
+    if (now.minute() < 10) {
+    logfile.print(0, DEC);
+    }
+    logfile.print(now.minute(), DEC);
+    logfile.print(":");
+    if (now.second() < 10) {
+    logfile.print(0, DEC);
+    }
+    logfile.print(now.second(), DEC);
+#if ECHO_TO_SERIAL
+    Serial.print(now.unixtime()); // seconds since 1/1/1970
+    Serial.print(",");
+    if (now.month() < 10) {
+    Serial.print(0, DEC);
+    }
+    Serial.print(now.month(), DEC);
+    Serial.print("/");
+    if (now.day() < 10) {
+    Serial.print(0, DEC);
+    }
+    Serial.print(now.day(), DEC);
+    Serial.print("/");
+    Serial.print(now.year(), DEC);
+    Serial.print(",");
+    if (now.hour() < 10) {
+    Serial.print(0, DEC);
+    }  
+    Serial.print(now.hour(), DEC);
+    Serial.print(":");
+    if (now.minute() < 10) {
+    Serial.print(0, DEC);
+    }
+    Serial.print(now.minute(), DEC);
+    Serial.print(":");
+    if (now.second() < 10) {
+    Serial.print(0, DEC);
+    }
+    Serial.print(now.second(), DEC);
+#endif //ECHO_TO_SERIAL
+
+    sensors_event_t event;
+
+    tcaselect(2);
+    tsl1.getEvent(&event);
+    if ((event.light == 0) |
+        (event.light > 4294966000.0) | 
+        (event.light <-4294966000.0))
+    {
+
+    Serial.println(F("Invalid data (adjust gain or timing)"));
+    logfile.print(",");    
+    logfile.print("0");
+    }
+    else
+    {
+    Serial.print(event.light); Serial.println(F(" lux1"));
+        logfile.print(",");    
+    logfile.print(event.light);
+        lcd.clear();
+    lcd.setCursor(0,0);
+    lcd.print("Lux=");
+    lcd.setCursor(5,0);
+    lcd.print(event.light);
+}
+
+    tcaselect(6);
+    tsl2.getEvent(&event);
+
+if ((event.light == 0) |
+        (event.light > 4294966000.0) | 
+        (event.light <-4294966000.0))
+    {
+    Serial.println(F("Invalid data (adjust gain or timing)"));
+    logfile.print(",");    
+    logfile.print("0");
+    }
+    else
+    {
+    Serial.print(event.light); Serial.println(F(" lux"));
+            logfile.print(",");    
+    logfile.print(event.light);
+}
+    
+    float h1 = dht1.readHumidity(); // relative humidity, %
+    float t1 = dht1.readTemperature(); // air temp, degC
+
+    float h2 = dht2.readHumidity(); // relative humidity, %
+    float t2 = dht2.readTemperature(); // air temp, 
+
+    if (isnan(t1) || isnan(h1)|| isnan(t2) || isnan(h2)) {
+    Serial.println("Failed to read from DHT");
+    } else 
+    {
+    logfile.print(",");    
+    logfile.print(h1, 2);
+    logfile.print(",");    
+    logfile.print(t1, 2);
+    logfile.print(",");    
+    logfile.print(h2, 2);
+    logfile.print(",");    
+    logfile.print(t2, 2);
+
+    lcd.setCursor(0,1);
+    lcd.print("Temp=");
+    lcd.setCursor(5,1);
+    lcd.print(t1);
+    lcd.setCursor(7,1);
+    lcd.print("Hum=");
+    lcd.setCursor(11,1);
+    lcd.print(h1);
+        
+#if ECHO_TO_SERIAL
+    Serial.print(",");   
+    Serial.print(h1, 2);
+    Serial.print(",");    
+    Serial.print(t1, 2);
+    Serial.print(",");   
+    Serial.print(h2, 2);
+    Serial.print(",");    
+    Serial.print(t2, 2);
+
+#endif 
+    }
+    
+    logfile.println();
+#if ECHO_TO_SERIAL
+    Serial.println();
+#endif 
+
+    logfile.flush();
+
+delay((LOG_INTERVAL -1) - (millis() % LOG_INTERVAL));
+}</span></pre>
+        <button class="codeButton" onclick="codeCopy('coden1')">Copy</button>
+    </div>
+    <script src="../../../assets/js/codestyler.js"></script>
+</body>
+</html>
