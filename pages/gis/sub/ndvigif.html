@@ -1,0 +1,252 @@
+<!DOCTYPE HTML>
+<!--
+	Directive by HTML5 UP
+	html5up.net | @ajlkn
+	Free for personal and commercial use under the CCA 3.0 license (html5up.net/license)
+-->
+<html>
+	<head>
+		<title>Digital Agriculture</title>
+		<meta charset="utf-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no" />
+		<link rel="stylesheet" href="../../../assets/css/main.css" />
+        <link rel="stylesheet" href="../../../assets/css/codestyler.css">
+	</head>
+	<body class="is-preload">
+
+		<!-- Header -->
+			<div id="header">
+				<span class="logo image"> <img src="../../../images/seed.png" alt="" /></span>
+				<h1>Hi. This is Dinesh Gulati.</h1>
+				<p><i>A place to display my recent projects roads towards digitization in agriculture</i></p>
+				<i><a href="https://www.linkedin.com/in/dinesh-gulati-120779149/" target="_blank" class="icon brands fa-linkedin" title="linkedin"></a></i>
+				<i><a href="https://github.com/dineshgulati933" target="_blank" class="icon brands fa-github" title="github"></a></i>
+				<i><a href="https://dineshgulati933.github.io/" target="_blank" class="fa fa-download" title="My CV"></a></i>
+			</div>
+
+		<!-- Main -->
+			<div id="main">
+				    <div class="box container">
+					<header>
+						<h2>Time series NDVI animation with GEE</h2>
+					</header>
+					<section>
+						<p style="text-align: justify;">In this article, we will discuss how to generate a time-series 
+                            animation of Punjab, India using the Normalized Difference Vegetation Index (NDVI) band of 
+                            the MODIS product in Google Earth Engine (GEE).</p>
+                        <p style="text-align: justify;">The MODIS product provides two Vegetation Indices (VI): the NDVI and the Enhanced Vegetation 
+                            Index (EVI). The NDVI is used as the continuity index to the existing National Oceanic 
+                            and Atmospheric Administration-Advanced Very High-Resolution Radiometer (NOAA-AVHRR) 
+                            derived NDVI, while the EVI has improved sensitivity over high biomass regions. 
+                            The resolution of the product is 1000 m.</p>
+                        <div class="image fit center"><figure><img src="../as/11.gif" alt="" />
+                            <figcaption> Punjab state gif generated with GEE using MODIS NDVI band</figcaption></figure></div>
+                        <p style="text-align: justify;">The basic workflow of generating the animation is as follows:</p>
+                        <ol class="default">
+                            <li>Fetch the MODIS vegetation indices dataset and subset the NDVI band.</li>
+                            <li>Define the region of interest and animation frame geometries.</li>
+                            <li>Group images from the same annual 16-day composite window using a join.</li>
+                            <li>Reduce the composite groups by median to produce animation frames.</li>
+                            <li>Define visualization parameters and convert data into RGB visualization images.</li>
+                            <li>Generate a URL that will produce a GIF in the browser.</li>
+                        </ol>
+                        <ol class="default">
+                            <li><p style="text-align: justify;">First, we retrieve the MODIS Terra Vegetation Indices 16-Day Global 1km dataset as an 
+                                ee.ImageCollection and select the NDVI band. Next, we define a polygon describing a 
+                                rectangular extent of the desired animation as the region of interest and set the 
+                                Punjab state shape file (loaded in GEE by importing in assets) to filter only the 
+                                geometry composing Punjab, which serves as the clipping geometry.</p></li>
+                            <div class="code">
+                                    <pre><span id='coden1'>var col = ee.ImageCollection('MODIS/061/MOD13A2').select('NDVI');
+var mask = punjab.geometry();
+var region = ee.Geometry.Polygon([[[73.69150301029744, 32.666931574795804],
+               [73.69150301029744, 29.410690494860194],
+               [77.34995027592244, 29.410690494860194],
+               [77.34995027592244, 32.666931574795804]]],
+               null,false);</span></pre>
+                                    <button class="codeButton" onclick="codeCopy('coden1')">Copy</button>
+                                </div>
+                            <li><p style="text-align: justify;">To generate the animation, we group inter-annual image 
+                                data representing the same 16-day composite window into lists. A calendar date needs 
+                                to be added to the metadata of each image so there is a common property to group by. 
+                                Day-of-year (DOY) is a fine format and can be derived from the ubiquitous 
+                                system:time_start property using the getRelative method. A join operation is 
+                                implemented that groups images by the 'doy' property just added.</p></li>
+                            <div class="code">
+                                    <pre><span id='coden2'>col = col.map(function(img) {
+    var doy = ee.Date(img.get('system:time_start')).getRelative('day', 'year');
+    return img.set('doy', doy);
+                            });
+                                                   
+var distinctDOY = col.filterDate('2013-01-01', '2014-01-01');
+                                                   
+// Define a filter that identifies which images from the complete collection
+// match the DOY from the distinct DOY collection.
+var filter = ee.Filter.equals({leftField: 'doy', rightField: 'doy'});
+                                                   
+// Define a join.
+var join = ee.Join.saveAll('doy_matches');
+                                                   
+// Apply the join and convert the resulting FeatureCollection to an
+// ImageCollection.
+var joinCol = ee.ImageCollection(join.apply(distinctDOY, col, filter));
+                                    </span></pre>
+                                    <button class="codeButton" onclick="codeCopy('coden2')">Copy</button>
+                                </div>
+                            <li><p style="text-align: justify;"></p>From the list of images having the same DOY, a collection can be created and then 
+                                reduced to the median of its constituents. Set visualization properties to control 
+                                the appearance of the data in the animation frames, including a color palette and 
+                                min and max values to stretch the palette between. The visualize method can convert 
+                                single-band images (like NDVI) into 3-band RGB pseudo-color images. Finally, the 
+                                getVideoThumbURL method creates an animation from the collection of RGB visualization 
+                                images generated in the previous step.</p></li>
+                            <div class="code">
+                                    <pre><span id='coden3'>// Apply median reduction among matching DOY collections.
+var comp = joinCol.map(function(img) {
+    var doyCol = ee.ImageCollection.fromImages(
+        img.get('doy_matches')
+    );
+    return doyCol.reduce(ee.Reducer.median());
+    });
+                                                                            
+// Define RGB visualization parameters.
+var visParams = {
+    min: 0.0,
+    max: 9000.0,
+    palette: [
+        'FFFFFF', 'CE7E45', 'DF923D', 'F1B555', 'FCD163', '99B718', '74A901',
+        '66A000', '529400', '3E8601', '207401', '056201', '004C00', '023B01',
+        '012E01', '011D01', '011301'
+        ],
+        };
+                                                                            
+// Create RGB visualization images for use as animation frames.
+var rgbVis = comp.map(function(img) {
+    return img.visualize(visParams).clip(mask);
+    });
+                                                                            
+// Define GIF visualization parameters.
+    var gifParams = {
+                    'region': region,
+                    'dimensions': 600,
+                    'crs': 'EPSG:3857',
+                    'framesPerSecond': 3
+                    };
+                                                                            
+ // Print the GIF URL to the console.
+print(rgbVis.getVideoThumbURL(gifParams));
+// Render the GIF animation in the console.
+//print(ui.Thumbnail(rgbVis, gifParams));   </span></pre>
+                                    <button class="codeButton" onclick="codeCopy('coden3')">Copy</button>
+                                </div>
+                        </ol>
+                        <p style="text-align: justify;">In conclusion, generating time-series animations of the NDVI 
+                            band in GEE is an effective way to monitor vegetation growth and track changes in vegetation
+                             over time. Following the basic workflow outlined above, users can generate their own 
+                             animations and customize them according to their requirements.
+                            <br>You can find the full code below.</p>
+                        
+                            <div class="code">
+                                <pre><span id='code2'>var col = ee.ImageCollection('MODIS/061/MOD13A2').select('NDVI');
+var mask = punjab.geometry();
+var region = ee.Geometry.Polygon([[[73.69150301029744, 32.666931574795804],
+                                        [73.69150301029744, 29.410690494860194],
+                                        [77.34995027592244, 29.410690494860194],
+                                        [77.34995027592244, 32.666931574795804]]],
+                                        null,false);
+col = col.map(function(img) {
+                             var doy = ee.Date(img.get('system:time_start')).getRelative('day', 'year');
+                             return img.set('doy', doy);
+                                    });
+                                    
+var distinctDOY = col.filterDate('2013-01-01', '2014-01-01');
+                                    
+// Define a filter that identifies which images from the complete collection
+// match the DOY from the distinct DOY collection.
+var filter = ee.Filter.equals({leftField: 'doy', rightField: 'doy'});
+                                    
+// Define a join.
+var join = ee.Join.saveAll('doy_matches');
+                                    
+// Apply the join and convert the resulting FeatureCollection to an
+// ImageCollection.
+var joinCol = ee.ImageCollection(join.apply(distinctDOY, col, filter));
+                                    
+// Apply median reduction among matching DOY collections.
+var comp = joinCol.map(function(img) {
+                                      var doyCol = ee.ImageCollection.fromImages(
+                                        img.get('doy_matches')
+                                      );
+                                      return doyCol.reduce(ee.Reducer.median());
+                                    });
+                                    
+// Define RGB visualization parameters.
+var visParams = {
+                 min: 0.0,
+                 max: 9000.0,
+                 palette: [
+                           'FFFFFF', 'CE7E45', 'DF923D', 'F1B555', 'FCD163', '99B718', '74A901',
+                           '66A000', '529400', '3E8601', '207401', '056201', '004C00', '023B01',
+                           '012E01', '011D01', '011301'
+                            ],
+                };
+                                    
+// Create RGB visualization images for use as animation frames.
+var rgbVis = comp.map(function(img) {
+                                      return img.visualize(visParams).clip(mask);
+                                    });
+                                    
+// Define GIF visualization parameters.
+var gifParams = {
+                 'region': region,
+                 'dimensions': 600,
+                 'crs': 'EPSG:3857',
+                 'framesPerSecond': 3
+                  };
+                                    
+// Print the GIF URL to the console.
+print(rgbVis.getVideoThumbURL(gifParams));
+// Render the GIF animation in the console.
+//print(ui.Thumbnail(rgbVis, gifParams));   
+
+
+</span></pre>
+                                <button class="codeButton" onclick="codeCopy('code2')">Copy</button>
+                            </div>
+                        
+            </div>
+
+			</div>
+
+
+
+		<!-- Footer -->
+			<div id="footer">
+				<div class="container medium">
+
+					<header class="major last">
+						<h2>More Crop with Each Drop</h2>
+					</header>
+
+					<p>Reach me at</p>
+
+					<ul class="icons">
+						<li><a href="https://www.linkedin.com/in/dinesh-gulati-120779149/" target="_blank" class="icon brands fa-linkedin" title="linkedin"><span class="label">Twitter</span></a></li>
+						<li><a href="https://github.com/dineshgulati933" target="_blank" class="icon brands fa-github" title="github"><span class="label">Github</span></a></li>
+						<li><a href='https://dineshgulati933.github.io/' target="_blank" class= "fa fa-download" title="My CV"></a></li>
+					</ul>
+
+
+				</div>
+			</div>
+
+		<!-- Scripts -->
+			<script src="../../../assets/js/jquery.min.js"></script>
+			<script src="../../../assets/js/browser.min.js"></script>
+			<script src="../../../assets/js/breakpoints.min.js"></script>
+			<script src="../../../assets/js/util.js"></script>
+			<script src="../../../assets/js/main.js"></script>
+            <script src="../../../assets/js/codestyler.js"></script>
+
+	</body>
+</html>
