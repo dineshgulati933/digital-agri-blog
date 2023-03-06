@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <title>Digital Agriculture</title>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="../../../assets/css/codestyler.css">
+    <title>Document</title>
+</head>
+<body>
+    <div class="code">
+        <pre><span id='coden1'>
+var mask = pb.geometry();
+
+var night = ee.ImageCollection("NOAA/VIIRS/DNB/MONTHLY_V1/VCMSLCFG").select("avg_rad");
+var doy = function(img) {
+    // get days since epoch for first day of year from properties
+    var firstDayOfYear = ee.Number(img
+    .get("system:time_start"))
+    .divide(24*60*60*1000);
+    var doy = img.subtract(firstDayOfYear).add(1);
+    return doy
+    .set("system:time_start", img.get("system:time_start"));
+};
+
+var startyear = 2014; 
+var endyear = 2022;
+var startmonth = 1; 
+var endmonth = 12; 
+
+
+var startdate = ee.Date.fromYMD(startyear, startmonth, 1);
+var enddate = ee.Date.fromYMD(endyear , endmonth, 30);
+var years = ee.List.sequence(startyear, endyear);
+var months = ee.List.sequence(startmonth,endmonth);
+
+var nightcol = night
+    .filterDate(startdate, enddate);
+print(nightcol);
+
+var yearlylight =  ee.ImageCollection.fromImages(
+    years.map(function (y) { 
+    var yearly = nightcol
+        .filter(ee.Filter.calendarRange(y, y, "year"))
+        .mean(); 
+    return yearly
+        .set("year", y) })
+        //.set("system:time_start", ee.Date.fromYMD)})
+    .flatten());
+    
+// Define RGB visualization parameters.
+var visParams = {min:0,max:10,palette:['000000','700000','808080',
+'FFFF00','ffffff','ffffff','ffffff']};
+
+// Create RGB visualization images for use as animation frames.
+var rgbVis = yearlylight.map(function(img) {
+    return img.visualize(visParams).clip(mask);
+});
+
+// Define GIF visualization parameters.
+var gifParams = {
+    'region': region,
+    'dimensions': 600,
+    'crs': 'EPSG:3857',
+    'framesPerSecond': 3
+};
+
+// Print the GIF URL to the console.
+print(rgbVis.getVideoThumbURL(gifParams));
+
+// Render the GIF animation in the console.
+//print(ui.Thumbnail(rgbVis, gifParams));</span></pre>
+        <button class="codeButton" onclick="codeCopy('coden1')">Copy</button>
+    </div>
+    <script src="../../../assets/js/codestyler.js"></script>
+</body>
+</html>
