@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <title>Digital Agriculture</title>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="../../../assets/css/codestyler.css">
+    <title>Document</title>
+</head>
+<body>
+    <div class="code">
+        <pre><span id='coden1'>
+var roi = pb.geometry();
+
+var scaleMOD = function(image2) {
+        return  image2
+            .multiply(0.02)
+            .subtract(273.3)
+            .float() // convert to float
+            .set("system:time_start", image2.get("system:time_start")); // keep time info
+};
+
+var dataset = ee.ImageCollection('MODIS/061/MOD11A2')
+                    .filter(ee.Filter.date('2018-01-01', '2018-02-01'))
+                    .filterBounds(roi)
+                    .map(scaleMOD);
+                    
+    
+var features = ee.FeatureCollection(pb);
+print(features);
+
+var doy = function(img) {
+    // get days since epoch for first day of year from properties
+    var firstDayOfYear = ee.Number(img
+    .get("system:time_start"))
+    .divide(24*60*60*1000);
+    var doy = img.subtract(firstDayOfYear).add(1);
+    return doy
+    .set("system:time_start", img.get("system:time_start"));
+};
+
+var modisLST0 = ee.ImageCollection('MODIS/061/MOD11A2')
+                    .filterBounds(roi)
+                    .map(scaleMOD);
+
+var startyear = 2001; 
+var endyear = 2022;
+var startmonth = 1; 
+var endmonth = 12; 
+
+
+var startdate = ee.Date.fromYMD(startyear, startmonth, 1);
+var enddate = ee.Date.fromYMD(endyear , endmonth, 30);
+var years = ee.List.sequence(startyear, endyear);
+var months = ee.List.sequence(startmonth,endmonth);
+
+var LSTcollection = modisLST0
+    .filterDate(startdate, enddate)
+    .select("LST_Day_1km");
+print(LSTcollection);
+
+var monthlyLST =  ee.ImageCollection.fromImages(
+    years.map(function (y) { 
+    return months.map(function(m) {
+        var monthly = LSTcollection
+        .filter(ee.Filter.calendarRange(y, y, "year"))
+        .filter(ee.Filter.calendarRange(m, m, "month"))
+        .mean(); 
+        return monthly
+        .set("year", y) 
+        .set("month", m) 
+        .set("system:time_start", ee.Date.fromYMD(y, m, 1).millis());}); })
+    .flatten());
+
+
+var reduceRegions = function(image) {
+    var meanLST = image.reduceRegions({
+    collection: features,
+    reducer: ee.Reducer.mean(),
+    crs:    'EPSG:4326',
+    scale: 1000});
+
+    return meanLST
+    // ...remove any features that have a null value for any property.
+    .filter(ee.Filter.notNull(['mean']))
+    // ...map over the featureCollection to edit properties of each feature.
+    .map(function(feature1) {
+        // Return the feature, but first...
+        return feature1
+        .select(['mean', 'dtname'], ['meanLST', 'dtname'])
+        // ..add an image ID and date property of the image being reduced.
+        .set({
+            'imgID': image.id(),
+            'date': image.date().format('YYYY-MM')
+        });
+    });
+};
+
+var lst_reduceRegions = monthlyLST.map(reduceRegions)
+    // Flatten the collection of featureCollections into a single featureCollection.
+    .flatten();
+// Export the featureCollection (table) as a CSV file to your Google Drive account.
+Export.table.toDrive({
+    collection: lst_reduceRegions,
+    selectors: ['date', 'meanLST', 'dtname'],
+    description: 'lst_reduceRegions_pb',
+    folder: 'reduce_region_test',
+    fileFormat: 'CSV'
+});</span></pre>
+        <button class="codeButton" onclick="codeCopy('coden1')">Copy</button>
+    </div>
+    <script src="../../../assets/js/codestyler.js"></script>
+</body>
+</html>

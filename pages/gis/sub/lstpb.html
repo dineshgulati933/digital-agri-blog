@@ -1,0 +1,123 @@
+<!DOCTYPE HTML>
+<!--
+	Directive by HTML5 UP
+	html5up.net | @ajlkn
+	Free for personal and commercial use under the CCA 3.0 license (html5up.net/license)
+-->
+<html>
+
+<head>
+    <title>Digital Agriculture</title>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no" />
+    <link rel="stylesheet" href="../../../assets/css/main.css" />
+    <link rel="stylesheet" href="../../../assets/css/codestyler.css">
+</head>
+
+<body class="is-preload">
+
+    <!-- Header -->
+    <div id="header">
+        <a href="https://dineshgulati933.github.io/digital-agri-blog/" title="Digital Agriculture"> <span
+                class="logo image"> <img src="../../../images/seed.png" alt="" /></span></a>
+        <h1>Hi. This is Dinesh Gulati.</h1>
+        <p><i>A place to display my recent projects roads towards digitization in agriculture</i></p>
+        <i><a href="https://www.linkedin.com/in/dinesh-gulati-120779149/" target="_blank"
+                class="icon brands fa-linkedin" title="linkedin"></a></i>
+        <i><a href="https://github.com/dineshgulati933" target="_blank" class="icon brands fa-github"
+                title="github"></a></i>
+        <i><a href="https://dineshgulati933.github.io/" target="_blank" class="fa fa-download" title="My CV"></a></i>
+    </div>
+
+    <!-- Main -->
+    <div id="main">
+        <div class="box container">
+            <header>
+                <h2>Land surface temperature extraction from MODIS product with GEE</h2>
+            </header>
+            <section>
+                <p style="text-align: justify;">In this project, we are going to extract the average monthly
+                    temperature of Punjab for each district from 2000 to 2022 using GEE from MOD11A2.061 Terra
+                    Land Surface Temperature (LST) product and we will employ this data in another data
+                    analysis project to evaluate the effect of temperature on Rabi season crop yield.</p>
+                <h3>MODIS Terra Land Surface Product</h3>
+                <p style="text-align: justify;">MOD11A2.061 Terra Land Surface Temperature is a product of the
+                    Moderate Resolution Imaging Spectroradiometer (MODIS) instrument aboard the Terra satellite.
+                    It provides information about the temperature of the land surface, which is important for
+                    a variety of applications such as weather forecasting, agricultural monitoring, and
+                    wildfire detection. Researchers, government agencies, and the private sector for a variety
+                    of applications widely use the MODIS LST product. It is freely available to the public
+                    through the National Aeronautics and Space Administration (NASA) Earth Observing System
+                    Data and Information System (EOSDIS).</p>
+                <p style="text-align: justify;">This product is derived from thermal infrared measurements
+                    acquired by the MODIS instrument. It provides 8-day average, global coverage of land surface
+                    temperature at a spatial resolution of approximately 1 km. The data is available in daytime
+                    and night-time versions, with separate bands for each</p>
+                <div class="image fit center">
+                    <figure><img src="../as/LST_500m.png" alt="" />
+                        <figcaption> Punjab state LST generated with GEE</figcaption>
+                    </figure>
+                </div>
+                <p style="text-align: justify;"><a href="../as/lstpunjabcode.html" target="_blank">Click to view
+                        code</a></p>
+                <h3>Code Explanation</h3>
+                <ol class="default">
+                    <li>Punjab shapefile with district boundaries is imported from assets and defined as a region of 
+                        interest (roi) in the code.</li>
+                    <li>A function is defined to scale and convert the values from Kelvin to degree Celsius.</li>
+                    <li>The imported shapefile is converted to feature collection to reduce temperature data as the 
+                        monthly average for each district.</li>
+                    <li>A function is defined to get days since the epoch for the first day of the year from properties.</li>
+                    <li>Modis data is added in the script as imagecollection with filter bounds as roi and mapped to 
+                        degree celsius with the function defined in step 2.</li>
+                    <li>After defining desired dates LST data is further filtered to these required dates and 
+                        “LST_Day_1km” band is selected.</li>
+                    <li>A nested function is defined and mapped simultaneously to select a particular year and 
+                        return the mean temperature for each month.</li>
+                    <li>Afterward, the extracted mean temperature from a nested function is returned as “meanLST” 
+                        for each month for all districts in the feature collection with the “reduceRegions” function.</li>
+                    <li>This data with three columns ‘date’, ‘meanLST’, and ‘dtname’ (district name) are exported to 
+                        google drive as a CSV file.</li>
+                </ol>
+            </section>
+        </div>
+
+
+    </div>
+
+
+
+    <!-- Footer -->
+    <div id="footer">
+        <div class="container medium">
+
+            <header class="major last">
+                <h2>More Crop with Each Drop</h2>
+            </header>
+
+            <p>Reach me at</p>
+
+            <ul class="icons">
+                <li><a href="https://www.linkedin.com/in/dinesh-gulati-120779149/" target="_blank"
+                        class="icon brands fa-linkedin" title="linkedin"><span class="label">Twitter</span></a></li>
+                <li><a href="https://github.com/dineshgulati933" target="_blank" class="icon brands fa-github"
+                        title="github"><span class="label">Github</span></a></li>
+                <li><a href='https://dineshgulati933.github.io/' target="_blank" class="fa fa-download"
+                        title="My CV"></a></li>
+            </ul>
+
+
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="../../../assets/js/jquery.min.js"></script>
+    <script src="../../../assets/js/browser.min.js"></script>
+    <script src="../../../assets/js/breakpoints.min.js"></script>
+    <script src="../../../assets/js/util.js"></script>
+    <script src="../../../assets/js/main.js"></script>
+    <script src="../../../assets/js/codestyler.js"></script>
+
+</body>
+
+</html>
