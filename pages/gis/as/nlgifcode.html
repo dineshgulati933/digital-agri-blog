@@ -14,15 +14,7 @@
 var mask = pb.geometry();
 
 var night = ee.ImageCollection("NOAA/VIIRS/DNB/MONTHLY_V1/VCMSLCFG").select("avg_rad");
-var doy = function(img) {
-    // get days since epoch for first day of year from properties
-    var firstDayOfYear = ee.Number(img
-    .get("system:time_start"))
-    .divide(24*60*60*1000);
-    var doy = img.subtract(firstDayOfYear).add(1);
-    return doy
-    .set("system:time_start", img.get("system:time_start"));
-};
+
 
 var startyear = 2014; 
 var endyear = 2022;
