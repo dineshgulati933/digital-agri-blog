@@ -413,12 +413,12 @@ blockquote {
 
 /* LOGO */
 
-.logo {
+.logonav {
 	font-size: 32px;
 }
-/* .logo img {
+.logonav img {
 	height: 50px;
-  } */
+  }
 
 /* NAVBAR MENU */
 
