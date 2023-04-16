@@ -5,12 +5,11 @@
     <meta charset="UTF-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link rel="stylesheet" href="../../../assets/css/codestyler.css">
+    <link rel="stylesheet" href="../../../assets/css/prism.css">
     <title>Document</title>
 </head>
 <body>
-    <div class="code">
-        <pre><span id='coden1'>
+    <pre class="line-numbers"><code class="language-js">
 var mask = pb.geometry();
 
 var night = ee.ImageCollection("NOAA/VIIRS/DNB/MONTHLY_V1/VCMSLCFG").select("avg_rad");
@@ -62,9 +61,7 @@ var gifParams = {
 print(rgbVis.getVideoThumbURL(gifParams));
 
 // Render the GIF animation in the console.
-//print(ui.Thumbnail(rgbVis, gifParams));</span></pre>
-        <button class="codeButton" onclick="codeCopy('coden1')">Copy</button>
-    </div>
-    <script src="../../../assets/js/codestyler.js"></script>
+//print(ui.Thumbnail(rgbVis, gifParams));</code></pre>
+    <script src="../../../assets/js/prism.js"></script>
 </body>
 </html>

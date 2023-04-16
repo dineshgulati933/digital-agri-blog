@@ -10,7 +10,7 @@
 		<meta charset="utf-8" />
 		<meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no" />
 		<link rel="stylesheet" href="../../../assets/css/main.css" />
-        <link rel="stylesheet" href="../../../assets/css/codestyler.css">
+        <link href="../../../assets/css/prism.css" rel="stylesheet" />
         <script src="https://code.jquery.com/jquery-1.10.2.js"></script>
 	</head>
 	<body class="is-preload">
@@ -63,24 +63,21 @@
                                 rectangular extent of the desired animation as the region of interest and set the 
                                 Punjab state shape file (loaded in GEE by importing in assets) to filter only the 
                                 geometry composing Punjab, which serves as the clipping geometry.</p></li>
-                            <div class="code">
-                                    <pre><span id='coden1'>var col = ee.ImageCollection('MODIS/061/MOD13A2').select('NDVI');
+                                    <pre class="line-numbers"><code class="language-js">var col = ee.ImageCollection('MODIS/061/MOD13A2').select('NDVI');
 var mask = punjab.geometry();
 var region = ee.Geometry.Polygon([[[73.69150301029744, 32.666931574795804],
                [73.69150301029744, 29.410690494860194],
                [77.34995027592244, 29.410690494860194],
                [77.34995027592244, 32.666931574795804]]],
-               null,false);</span></pre>
-                                    <button class="codeButton" onclick="codeCopy('coden1')">Copy</button>
-                                </div>
+               null,false);</code></pre>
                             <li><p style="text-align: justify;">To generate the animation, we group inter-annual image 
                                 data representing the same 16-day composite window into lists. A calendar date needs 
                                 to be added to the metadata of each image so there is a common property to group by. 
                                 Day-of-year (DOY) is a fine format and can be derived from the ubiquitous 
                                 system:time_start property using the getRelative method. A join operation is 
                                 implemented that groups images by the 'doy' property just added.</p></li>
-                            <div class="code">
-                                    <pre><span id='coden2'>col = col.map(function(img) {
+
+                                    <pre class="line-numbers"><code class="language-js">col = col.map(function(img) {
     var doy = ee.Date(img.get('system:time_start')).getRelative('day', 'year');
     return img.set('doy', doy);
                             });
@@ -97,9 +94,8 @@ var join = ee.Join.saveAll('doy_matches');
 // Apply the join and convert the resulting FeatureCollection to an
 // ImageCollection.
 var joinCol = ee.ImageCollection(join.apply(distinctDOY, col, filter));
-                                    </span></pre>
-                                    <button class="codeButton" onclick="codeCopy('coden2')">Copy</button>
-                                </div>
+                        </code></pre>
+
                             <li><p style="text-align: justify;"></p>From the list of images having the same DOY, a collection can be created and then 
                                 reduced to the median of its constituents. Set visualization properties to control 
                                 the appearance of the data in the animation frames, including a color palette and 
@@ -107,9 +103,8 @@ var joinCol = ee.ImageCollection(join.apply(distinctDOY, col, filter));
                                 single-band images (like NDVI) into 3-band RGB pseudo-color images. Finally, the 
                                 getVideoThumbURL method creates an animation from the collection of RGB visualization 
                                 images generated in the previous step.</p></li>
-                            
-                            <div class="code">
-                                    <pre><span id='coden3'>// Apply median reduction among matching DOY collections.
+
+                                    <pre class="line-numbers"><code class="language-js">// Apply median reduction among matching DOY collections.
 var comp = joinCol.map(function(img) {
     var doyCol = ee.ImageCollection.fromImages(
         img.get('doy_matches')
@@ -144,9 +139,8 @@ var rgbVis = comp.map(function(img) {
  // Print the GIF URL to the console.
 print(rgbVis.getVideoThumbURL(gifParams));
 // Render the GIF animation in the console.
-//print(ui.Thumbnail(rgbVis, gifParams));   </span></pre>
-                                    <button class="codeButton" onclick="codeCopy('coden3')">Copy</button>
-                                </div>
+//print(ui.Thumbnail(rgbVis, gifParams));   </code></pre>
+
                         </ol>
                         <p style="text-align: justify;">In conclusion, generating time-series animations of the NDVI 
                             band in GEE is an effective way to monitor vegetation growth and track changes in vegetation
@@ -254,7 +248,7 @@ print(rgbVis.getVideoThumbURL(gifParams));
 			<script src="../../../assets/js/breakpoints.min.js"></script>
 			<script src="../../../assets/js/util.js"></script>
 			<script src="../../../assets/js/main.js"></script>
-            <script src="../../../assets/js/codestyler.js"></script>
+            <script src="../../../assets/js/prism.js"></script>
 
 	</body>
 </html>

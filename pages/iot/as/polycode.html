@@ -5,12 +5,11 @@
     <meta charset="UTF-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link rel="stylesheet" href="../../../assets/css/codestyler.css">
+    <link rel="stylesheet" href="../../../assets/css/prism.css">
     <title>Document</title>
 </head>
 <body>
-    <div class="code">
-        <pre><span id='coden1'>
+    <pre class="line-numbers"><code class="language-arduino">
 Details
 // log Temperature/Humidity/Lumisity readings to SD card
 // Description of sensor systen: We use DHT22 temperature sensor to measure temperature and humidity and adafruit TSL 2591 
@@ -315,9 +314,7 @@ if ((event.light == 0) |
     logfile.flush();
 
 delay((LOG_INTERVAL -1) - (millis() % LOG_INTERVAL));
-}</span></pre>
-        <button class="codeButton" onclick="codeCopy('coden1')">Copy</button>
-    </div>
-    <script src="../../../assets/js/codestyler.js"></script>
+}</code></pre>
+    <script src="../../../assets/js/prism.js"></script>
 </body>
 </html>
