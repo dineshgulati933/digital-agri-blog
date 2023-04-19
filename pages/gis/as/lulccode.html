@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <title>Digital Agriculture</title>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="../../../assets/css/prism.css">
+    <title>Document</title>
+</head>
+<body>
+    <pre class="line-numbers"><code class="language-javascript">
+var pt = ee.Geometry.Point(75.46, 31.7008);
+var maskL8sr = function(image) {
+    // Bit 0 - Fill
+    // Bit 1 - Dilated Cloud
+    // Bit 2 - Cirrus
+    // Bit 3 - Cloud
+    // Bit 4 - Cloud Shadow
+    var qaMask = image.select('QA_PIXEL').bitwiseAnd(parseInt('11111', 2)).eq(0);
+    var saturationMask = image.select('QA_RADSAT').eq(0);
+
+    // Apply the scaling factors to the appropriate bands.
+    var opticalBands = image.select('SR_B.').multiply(0.0000275).add(-0.2);
+    var thermalBands = image.select('ST_B.*').multiply(0.00341802).add(149.0);
+
+    // Replace the original bands with the scaled ones and apply the masks.
+    return image.addBands(opticalBands, null, true)
+    .addBands(thermalBands, null, true)
+    .updateMask(qaMask)
+    .updateMask(saturationMask);
+};
+
+var landsat = ee.ImageCollection('LANDSAT/LC08/C02/T1_L2')
+                .filterBounds(pb.geometry())
+                .filterDate('2022-01-01', '2022-12-31')
+                .map(maskL8sr);
+landsat = landsat.median().clip(pb.geometry());
+
+var ndvi = landsat.normalizedDifference(['SR_B5','SR_B4']).rename('NDVI');
+var ndwi = landsat.normalizedDifference(['SR_B5','SR_B6']).rename('NDWI');
+
+landsat = landsat.addBands(ndvi)
+                .addBands(ndwi);
+//print(landsat);
+
+Map.addLayer(landsat.select('NDVI'), {min:-1,max:1,palette:['red', 'white', 'green']}, 'NDVI');
+Map.addLayer(landsat.select('NDWI'), {min:-0.5,max:1,palette:['white', 'blue']}, 'NDWI');
+Map.centerObject(pt, 7);
+Map.addLayer(landsat, 
+    {bands: ['SR_B4','SR_B3','SR_B2'],min: 0,max:0.3},
+    'True color');
+Map.addLayer(landsat, 
+    {bands: ['SR_B5','SR_B4','SR_B3'],min: 0,max:0.3},
+    'False color');
+    
+var LC = (ee.ImageCollection("MODIS/061/MCD12Q1")
+    .filterDate('2021-01-01','2022-12-31')
+    .sort('system:index',false)
+    .select("LC_Type1")
+    .first()).clip(pb.geometry());
+    
+var LCVis = {
+    min: 1.0,
+    max: 17.0,
+    palette: [
+    '05450a', '086a10', '54a708', '78d203', '009900', 'c6b044', 'dcd159',
+    'dade48', 'fbff13', 'b6ff05', '27ff87', 'c24f44', 'a5a5a5', 'ff6d4c',
+    '69fff8', 'f9ffa4', '1c0dff'
+    ]};
+//Map.addLayer(LC,LCVis,'Landcover');
+    
+var trainingFeatures = ee.FeatureCollection([Forest, Developed, Water, Cropland]).flatten();
+
+var predictionBands = ['SR_B1', 'SR_B2', 'SR_B3', 'SR_B4', 'SR_B5', 'SR_B6', 'SR_B7',
+    'ST_B10', 'NDVI', 'NDWI'];
+
+var classifierTraining = landsat.select(predictionBands)
+    .sampleRegions({collection: trainingFeatures,
+                properties: ['class'],
+                scale: 30
+    });
+print(classifierTraining);
+
+var param = {features: classifierTraining,
+            classProperty: 'class',
+            inputProperties: predictionBands
+};
+
+
+var classifierCART = ee.Classifier.smileCart().train(param);
+
+var classified = landsat.select(predictionBands).classify(classifierCART);
+
+var classificationVis = {min:0,
+            max:4,
+            palette: ['green', 'red', 'blue', 'yellow','white']};
+
+Map.addLayer(classified, classificationVis, 'CART classified');
+
+var classifierRF = ee.Classifier.smileRandomForest(100).train(param);
+
+var RFclassified = landsat.select(predictionBands).classify(
+    classifierRF);
+
+// Add classified image to the map.
+Map.addLayer(RFclassified, classificationVis, 'RF classified');
+
+
+// Import the reference dataset.
+var data = ee.FeatureCollection(classifierTraining);
+
+// Define the prediction bands.
+var predictionBands = [
+    'SR_B1', 'SR_B2', 'SR_B3', 'SR_B4', 'SR_B5', 'SR_B6', 'SR_B7',
+    'ST_B10', 'NDVI', 'NDWI'
+];
+
+// Split the dataset into training and testing sets.
+var trainingTesting = data.randomColumn();
+var trainingSet = trainingTesting
+    .filter(ee.Filter.lessThan('random', 0.8));
+var testingSet = trainingTesting
+    .filter(ee.Filter.greaterThanOrEquals('random', 0.8));
+    
+// Train the Random Forest Classifier with the trainingSet.
+var RFclassifier = ee.Classifier.smileRandomForest(100).train({
+    features: trainingSet,
+    classProperty: 'class',
+    inputProperties: predictionBands
+});
+
+// Now, to test the classification (verify model's accuracy), 
+// we classify the testingSet and get a confusion matrix.
+var confusionMatrix = testingSet.classify(RFclassifier)
+    .errorMatrix({
+        actual: 'class',
+        predicted: 'classification'
+    });
+    
+// Print the results.
+print('Confusion matrix:', confusionMatrix);
+print('Overall Accuracy:', confusionMatrix.accuracy());
+print('Producers Accuracy:', confusionMatrix.producersAccuracy());
+print('Consumers Accuracy:', confusionMatrix.consumersAccuracy());
+print('Kappa:', confusionMatrix.kappa());</code></pre>
+    <script src="../../../assets/js/prism.js"></script>
+</body>
+</html>
