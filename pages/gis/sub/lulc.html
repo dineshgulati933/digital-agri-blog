@@ -56,7 +56,9 @@
                             Landsat bands (optical and
                             thermal) to their standard values.</p>
                     </li>
-                    <pre class="line-numbers"><code class="language-js">var pt = ee.Geometry.Point(75.46, 31.7008);
+                    <pre class="line-numbers"><code class="language-js">// firstly import the shapefile of your desired region which in our case is Punjab
+// you can upload your own shapefile as an asset in GEE and can be imported from assets taskbar on the left side of GEE
+var pt = ee.Geometry.Point(75.46, 31.7008);
 var maskL8sr = function(image) {
     // Bit 0 - Fill
     // Bit 1 - Dilated Cloud
@@ -88,7 +90,7 @@ var maskL8sr = function(image) {
                             to median values, and the composite Landsat visual for the Punjab shapefile is clipped.</p>
                     </li>
                     <pre class="line-numbers"><code class="language-js">var landsat = ee.ImageCollection('LANDSAT/LC08/C02/T1_L2')
-                        .filterBounds(pb.geometry())
+                        .filterBounds(pb.geometry()) // here pb is the shapefile needed to import from assets menu bar on the left side of GEE
                         .filterDate('2022-01-01', '2022-12-31')
                         .map(maskL8sr);
 landsat = landsat.median().clip(pb.geometry());</code></pre>

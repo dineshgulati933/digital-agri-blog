@@ -10,7 +10,9 @@
 </head>
 <body>
     <pre class="line-numbers"><code class="language-javascript">
-var roi = pb.geometry();
+// firstly import the shapefile of your desired region which in our case is Punjab
+// you can upload your own shapefile as an asset in GEE and can be imported from assets taskbar on the left side of GEE
+var roi = pb.geometry(); // here pb is the shapefile needed to import from assets menu bar on the left side of GEE
 
 var scaleMOD = function(image2) {
         return  image2

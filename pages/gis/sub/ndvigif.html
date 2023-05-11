@@ -63,8 +63,10 @@
                                 rectangular extent of the desired animation as the region of interest and set the 
                                 Punjab state shape file (loaded in GEE by importing in assets) to filter only the 
                                 geometry composing Punjab, which serves as the clipping geometry.</p></li>
-                                    <pre class="line-numbers"><code class="language-js">var col = ee.ImageCollection('MODIS/061/MOD13A2').select('NDVI');
-var mask = punjab.geometry();
+                                    <pre class="line-numbers"><code class="language-js">// firstly import the shapefile of your desired region which in our case is Punjab
+// you can upload your own shapefile as a asset in GEE and can be imported from asser taskbar on the left side of GEE
+var col = ee.ImageCollection('MODIS/061/MOD13A2').select('NDVI');
+var mask = punjab.geometry(); // here punjab is the shapefile needed to import from assets menu bar on the left side of GEE
 var region = ee.Geometry.Polygon([[[73.69150301029744, 32.666931574795804],
                [73.69150301029744, 29.410690494860194],
                [77.34995027592244, 29.410690494860194],

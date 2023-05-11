@@ -10,6 +10,8 @@
 </head>
 <body>
     <pre class="line-numbers"><code class="language-javascript">
+// firstly import the shapefile of your desired region which in our case is Punjab
+// you can upload your own shapefile as an asset in GEE and can be imported from assets taskbar on the left side of GEE
 var pt = ee.Geometry.Point(75.46, 31.7008);
 var maskL8sr = function(image) {
     // Bit 0 - Fill
@@ -35,7 +37,7 @@ var landsat = ee.ImageCollection('LANDSAT/LC08/C02/T1_L2')
                 .filterBounds(pb.geometry())
                 .filterDate('2022-01-01', '2022-12-31')
                 .map(maskL8sr);
-landsat = landsat.median().clip(pb.geometry());
+landsat = landsat.median().clip(pb.geometry()); // here pb is the shapefile needed to import from assets menu bar on the left side of GEE
 
 var ndvi = landsat.normalizedDifference(['SR_B5','SR_B4']).rename('NDVI');
 var ndwi = landsat.normalizedDifference(['SR_B5','SR_B6']).rename('NDWI');

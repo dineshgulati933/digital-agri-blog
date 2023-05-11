@@ -10,8 +10,10 @@
 </head>
 <body>
     <pre class="line-numbers"><code class="language-js">
+        // firstly import the shapefile of your desired region which in our case is Punjab
+        // you can upload your own shapefile as an asset in GEE and can be imported from assets taskbar on the left side of GEE
 var col = ee.ImageCollection('MODIS/006/MOD13A2').select('NDVI');
-var mask = punjab.geometry();
+var mask = punjab.geometry(); // here punjab is the shapefile needed to import from assets menu bar on the left side of GEE
 
 
 var region = ee.Geometry.Polygon(
